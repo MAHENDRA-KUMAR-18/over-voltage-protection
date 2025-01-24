@@ -1,0 +1,68 @@
+const int voltagePin = A0; // Pin for voltage measurement
+const int currentPin = A1; // Pin for current measurement
+const int relayPin = 7;    // Pin to control the relay/MOSFET
+
+// Define thresholds
+const float voltageThreshold = 12.0; // Over-voltage threshold in volts
+const float currentThreshold = 2.0;   // Over-current threshold in amps
+
+// Voltage divider resistors
+const float R1 = 10000.0; // Resistor connected to Vcc
+const float R2 = 10000.0; // Resistor connected to GND
+
+// Shunt resistor value
+const float shuntResistor = 0.1; // Shunt resistor value in ohms
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, HIGH); // Start with the relay off (load connected)
+}
+
+void loop() {
+  // Read voltage
+  float voltage = readVoltage();
+  // Read current
+  float current = readCurrent();
+
+  // Check for over-voltage
+  if (voltage > voltageThreshold) {
+    Serial.println("Over Voltage! Disconnecting load.");
+    disconnectLoad();
+  }
+
+  // Check for over-current
+  if (current > currentThreshold) {
+    Serial.println("Over Current! Disconnecting load.");
+    disconnectLoad();
+  }
+
+  // Print values for monitoring
+  Serial.print("Voltage: ");
+  Serial.print(voltage);
+  Serial.print(" V, Current: ");
+  Serial.print(current);
+  Serial.println(" A");
+
+  delay(1000); // Delay for readability
+}
+
+float readVoltage() {
+  int sensorValue = analogRead(voltagePin);
+  float voltage = (sensorValue * (5.0 / 1023.0)) * ((R1 + R2) / R2); // Voltage divider formula
+  return voltage;
+}
+
+float readCurrent() {
+  int sensorValue = analogRead(currentPin);
+  float current = (sensorValue * (5.0 / 1023.0)) / shuntResistor; // Ohm's law
+  return current;
+}
+
+void disconnectLoad() {
+  digitalWrite(relayPin, LOW); // Turn off the relay (disconnect load)
+}
+
+void reconnectLoad() {
+  digitalWrite(relayPin, HIGH); // Turn on the relay (connect load)
+}
